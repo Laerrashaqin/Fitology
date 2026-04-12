@@ -12,7 +12,7 @@ Fitology adalah website yang dirancang untuk membantu pengguna mengetahui bentuk
 - Zulfa Laa Raiba – 13182420097
 - Ahmad Rozin Romdhoni – 13182420102
 - Laerra Shaqin Zahna – 13182420108
-- Iko Hilmy Hanan - 13182420120
+- Iko Hilmy Hanan - 13182420118
 
 ## Informasi 
 - Menggunakan HTML, CSS, dan JavaScript
