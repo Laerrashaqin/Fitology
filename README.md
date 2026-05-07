@@ -1,22 +1,20 @@
-# Fitology - Smart Body Shape & Outfit Recommendation Website
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-Fitology adalah website yang dirancang untuk membantu pengguna mengetahui bentuk tubuh mereka dan mendapatkan rekomendasi model pakaian yang sesuai. Website ini menggabungkan konsep analisis proporsi tubuh dengan rekomendasi fashion sederhana sehingga pengguna dapat memperoleh panduan yang lebih personal. 
+# Run and deploy your AI Studio app
 
-Ubah cara Anda berpakaian dengan Fitology, sebuah platform Smart Body Shape & Outfit Recommendation. Kami percaya bahwa fashion bukan sekadar tren, melainkan bagaimana memahami proporsi tubuh Anda sendiri. Melalui antarmuka modern yang dibangun dengan React, Fitology menawarkan fitur interaktif mulai dari kalkulasi bentuk tubuh hingga kurasi gaya yang paling sesuai untuk Anda. Temukan panduan gaya yang lebih personal dan tingkatkan kepercayaan diri Anda setiap hari bersama Fitology.
+This contains everything you need to run your app locally.
 
-## Fitur utama
-- Body Shape Calculator
-- Outfits Recommendation
-- Style Tips
-- Simple Interactive Result
+View your app in AI Studio: https://ai.studio/apps/7c7ba50b-9fc5-4db9-932f-09c0d4bd9ea3
 
-## Tim
-- Zulfa Laa Raiba – 13182420097
-- Ahmad Rozin Romdhoni – 13182420102
-- Laerra Shaqin Zahna – 13182420108
-- Iko Hilmy Hanan - 13182420118
+## Run Locally
 
-## Informasi 
-- Menggunakan HTML, CSS, dan JavaScript
-- Framework memakai React agar tampak lebih modern mengikuti Teknologi
-- Database kita pakai SQL karena lebih mudah 
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
