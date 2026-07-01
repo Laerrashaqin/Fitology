@@ -1,11 +1,15 @@
-import { type ChangeEvent, type FormEvent } from "react";
-import { Loader2, ArrowDown } from "lucide-react";
+import React, { type ChangeEvent, type FormEvent, useState } from "react";
+import { Loader2, ArrowDown, UserCheck } from "lucide-react";
+import { motion } from "motion/react";
+import { auth, db } from "../../../lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 import {
   type Measurements,
   type Gender,
   type ShapeData,
   type Language,
 } from "../../../types";
+import BodySilhouette from "./BodySilhouette";
 
 interface CalculatorProps {
   lang: Language;
@@ -17,10 +21,11 @@ interface CalculatorProps {
   setUnit: (u: "CM" | "IN") => void;
   calculateBodyShape: (e?: FormEvent) => void;
   isCalculating: boolean;
-  result: string | null;
+  result: any | null;
   error: string;
   currentShapeData: ShapeData | null;
   scrollToRecommendations: () => void;
+  setMeasurements: React.Dispatch<React.SetStateAction<Measurements>>;
 }
 
 export default function Calculator({
@@ -37,7 +42,9 @@ export default function Calculator({
   error,
   currentShapeData,
   scrollToRecommendations,
+  setMeasurements
 }: CalculatorProps) {
+  const [activeField, setActiveField] = useState<string | null>(null);
   const texts = {
     id: {
       phase: "Fase 01",
@@ -56,25 +63,6 @@ export default function Calculator({
       insp: "Inspeksi Berkas",
       comp: "Menghitung fashion item optimal..",
       unitLhs: "CM",
-      unitRhs: "IM",
-    },
-    en: {
-      phase: "Phase 01",
-      title: "The Metrics",
-      desc: "Input your precise bodily dimensions. We architect your ideal silhouette based on strict geometric principles.",
-      womens: "Women",
-      mens: "Men",
-      dim: "Dimensions",
-      calc: "Calculate Profile",
-      proc: "Processing...",
-      pending: "Pending Analysis",
-      pDesc:
-        "Provide your structural data to unlock curated styling principles.",
-      status: "Status: Complete",
-      diag: "Diagnostic",
-      insp: "Inspect Dossier",
-      comp: "Computing optimal items...",
-      unitLhs: "CM",
       unitRhs: "IN",
     },
   };
@@ -84,39 +72,85 @@ export default function Calculator({
       h: { l: "Tinggi", d: "Vertikal keseluruhan" },
       w: { l: "Berat", d: "Massa tubuh total" },
       s: { l: "Bahu", d: "Lebar ujung ke ujung" },
-      b1: { l: "Dada", d: "Diukur melingkar / muter" },
-      b2: { l: "Dada", d: "Diukur melingkar / muter" },
-      wa: { l: "Pinggang", d: "Diukur melingkar / muter" },
-      hi: { l: "Pinggul", d: "Diukur melingkar / muter" },
-    },
-    en: {
-      h: { l: "Height", d: "Total vertical height" },
-      w: { l: "Weight", d: "Total body mass" },
-      s: { l: "Shoulder", d: "Width from edge to edge" },
-      b1: { l: "Bust", d: "Full circumference circle" },
-      b2: { l: "Chest", d: "Full circumference circle" },
-      wa: { l: "Waist", d: "Full circumference circle" },
-      hi: { l: "Hips", d: "Full circumference circle" },
+      b1: { l: "Dada", d: "Melingkar / muter" },
+      b2: { l: "Dada", d: "Melingkar / muter" },
+      wa: { l: "Pinggang", d: "Melingkar / muter" },
+      hi: { l: "Pinggul", d: "Melingkar / muter" },
     },
   };
 
   const formFields = [
     { id: "height", label: f[lang].h.l, desc: f[lang].h.d, type: "length", ph: "165" },
-    { id: "weight", label: f[lang].w.l, desc: f[lang].w.d, type: "weight", ph: "60" },
+    { id: "weight", label: f[lang].w.l, desc: f[lang].w.d, type: "weight", ph: "55" },
     { id: "shoulder", label: f[lang].s.l, desc: f[lang].s.d, type: "length", ph: "40" },
     {
       id: "bust",
       label: gender === "women" ? f[lang].b1.l : f[lang].b2.l,
       desc: f[lang].b1.d,
       type: "length",
-      ph: "90"
+      ph: "85"
     },
     { id: "waist", label: f[lang].wa.l, desc: f[lang].wa.d, type: "length", ph: "70" },
-    { id: "hips", label: f[lang].hi.l, desc: f[lang].hi.d, type: "length", ph: "95" },
+    { id: "hips", label: f[lang].hi.l, desc: f[lang].hi.d, type: "length", ph: "85" },
   ];
+
+  const getShapeImageUrl = () => {
+    if (!currentShapeData || !currentShapeData.title) return null;
+    const shape = currentShapeData.title.toLowerCase();
+    if (gender === 'women') {
+      if (shape.includes('hourglass')) return '/images/women01.jpg';
+      if (shape.includes('pear')) return '/images/women03.jpg';
+      if (shape.includes('apple')) return '/images/women02.jpg';
+      if (shape.includes('rectangle')) return '/images/women04.jpg';
+      if (shape.includes('inverted')) return '/images/women05.jpg';
+    } else {
+      if (shape.includes('trapezoid')) return '/images/men01.jpg';
+      if (shape.includes('triangle') && !shape.includes('inverted')) return '/images/men03.jpg';
+      if (shape.includes('oval')) return '/images/men02.jpg';
+      if (shape.includes('rectangle')) return '/images/men04.jpg';
+      if (shape.includes('inverted')) return '/images/men05.jpg';
+    }
+    return null;
+  };
 
   const lengthUnit = unit === "CM" ? "CM" : "IN";
   const weightUnit = unit === "CM" ? "KG" : "LBS";
+
+  const loadFromProfile = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert(lang === "id" ? "Silakan login terlebih dahulu untuk menggunakan fitur ini." : "Please login first to use this feature.");
+      return;
+    }
+
+    try {
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.gender) {
+          setGender(data.gender);
+        }
+        if (data.measurements) {
+          setMeasurements({
+            height: data.measurements.height || "",
+            weight: data.measurements.weight || "",
+            shoulder: data.measurements.shoulder || "",
+            bust: data.measurements.bust || "",
+            waist: data.measurements.waist || "",
+            hips: data.measurements.hips || "",
+            highHip: data.measurements.highHip || "",
+          });
+          alert(lang === "id" ? "Data berhasil dimuat dari profil Anda!" : "Data successfully loaded from your profile!");
+        } else {
+          alert(lang === "id" ? "Data tubuh belum disetel di profil Anda. Buka menu Akun Saya > Data Tubuh untuk mengatur." : "Body data is not set in your profile yet. Go to My Account > Body Data to set it.");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load body data:", error);
+      alert(lang === "id" ? "Gagal memuat data tubuh." : "Failed to load body data.");
+    }
+  };
 
   return (
     <section
@@ -156,10 +190,19 @@ export default function Calculator({
                 </button>
               </div>
 
-              <div className="flex justify-between items-center mb-8">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-900">
-                  {texts[lang].dim}
-                </h4>
+              <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-900">
+                    {texts[lang].dim}
+                  </h4>
+                  <button
+                    onClick={loadFromProfile}
+                    className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    <UserCheck className="w-3 h-3" />
+                    {lang === 'id' ? 'Gunakan Data Profil' : 'Use Profile Data'}
+                  </button>
+                </div>
                 <div className="flex border border-black/20">
                   <button
                     onClick={() => setUnit("CM")}
@@ -200,6 +243,8 @@ export default function Calculator({
                         name={field.id}
                         value={measurements[field.id as keyof Measurements] || ""}
                         onChange={handleInputChange}
+                        onFocus={() => setActiveField(field.id)}
+                        onBlur={() => setActiveField(null)}
                         placeholder={field.ph}
                         className="w-full bg-transparent py-2 border-none focus:outline-none focus:ring-0 text-slate-900 text-lg font-black appearance-none placeholder-slate-300"
                       />
@@ -234,68 +279,89 @@ export default function Calculator({
             </button>
           </div>
 
-          <div className="hidden lg:flex w-full justify-center items-center py-10 bg-white border border-black/10 shadow-sm">
-            <div className="relative h-[400px] w-[160px]">
-              <svg
-                viewBox="0 0 100 250"
-                className={`w-full h-full text-slate-50 stroke-slate-200 transition-all duration-500 ${gender === "men" ? "scale-x-110" : ""}`}
-              >
-                <path
-                  fill="currentColor"
-                  strokeWidth="1"
-                  d="M50 10 C 60 10, 65 20, 65 30 C 65 40, 58 45, 50 45 C 42 45, 35 40, 35 30 C 35 20, 40 10, 50 10 Z"
-                />
-                <path
-                  fill="currentColor"
-                  strokeWidth="1"
-                  d="M35 45 C 20 50, 15 60, 20 80 C 25 100, 30 110, 35 120 C 38 120, 38 100, 40 100 C 45 100, 55 100, 60 100 C 62 100, 62 120, 65 120 C 70 110, 75 100, 80 80 C 85 60, 80 50, 65 45 Z"
-                />
-                <path
-                  fill="currentColor"
-                  strokeWidth="1"
-                  d="M35 120 C 25 140, 20 180, 25 240 L 45 240 C 45 200, 45 150, 50 150 C 55 150, 55 200, 55 240 L 75 240 C 80 180, 75 140, 65 120 Z"
-                />
-              </svg>
-
-              {[
-                { id: "shoulder", top: "18%", label: "S" },
-                { id: "bust", top: "32%", label: "B" },
-                { id: "waist", top: "45%", label: "W" },
-                { id: "hips", top: "58%", label: "H" },
-              ].map((line) => (
-                <div
-                  key={line.id}
-                  className={`absolute left-0 right-0 border-t border-dashed ${measurements[line.id as keyof Measurements] ? "border-black text-black" : "border-slate-300 text-slate-300"} flex justify-between items-center transition-colors`}
-                  style={{ top: line.top }}
-                >
-                  <span className="text-[10px] font-black uppercase tracking-widest -ml-8 bg-white px-1 z-10">
-                    {line.label}
-                  </span>
-                  <div className="w-1.5 h-1.5 rounded-none bg-current absolute -left-0.5 -top-[3px]"></div>
-                  <div className="w-1.5 h-1.5 rounded-none bg-current absolute -right-0.5 -top-[3px]"></div>
-                </div>
-              ))}
-            </div>
+          <div className="hidden lg:flex w-full justify-center items-center bg-white border border-black/10 shadow-sm overflow-hidden">
+            <BodySilhouette
+              measurements={measurements}
+              gender={gender}
+              unit={unit}
+              activeField={activeField}
+            />
           </div>
 
           <div className="w-full flex justify-center items-stretch bg-white border border-black/10 shadow-sm">
             {!result && !isCalculating ? (
-              <div className="w-full p-8 md:p-10 text-center flex flex-col items-center justify-center min-h-[400px]">
-                <div className="w-12 h-12 flex items-center justify-center mb-6 border border-black/10 bg-slate-50">
-                  <div className="w-2 h-2 bg-emerald-600"></div>
+              <div className="w-full p-8 md:p-10 text-center flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden group">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-emerald-50/50 via-white to-white opacity-50"></div>
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="relative w-16 h-16 mb-8 flex items-center justify-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                      className="absolute inset-0 border border-slate-200 border-dashed rounded-full"
+                    />
+                    <motion.div
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                      className="absolute inset-2 border border-slate-100 rounded-full"
+                    />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      className="w-2 h-2 bg-emerald-600 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                    />
+                  </div>
+
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-4">
+                    {texts[lang].pending}
+                  </h4>
+                  <p className="text-slate-500 text-sm font-serif leading-relaxed px-4 max-w-[250px]">
+                    {texts[lang].pDesc}
+                  </p>
                 </div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-4">
-                  {texts[lang].pending}
-                </h4>
-                <p className="text-slate-500 text-sm font-serif leading-relaxed px-4">
-                  {texts[lang].pDesc}
-                </p>
+              </div>
+            ) : isCalculating ? (
+              <div className="w-full p-8 md:p-10 text-center flex flex-col items-center justify-center min-h-[400px] bg-emerald-700 relative overflow-hidden">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute w-[300px] h-[300px] bg-emerald-600 rounded-full blur-3xl"
+                />
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="relative w-20 h-20 mb-8 flex justify-center items-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="absolute inset-0 border-2 border-emerald-500 border-t-emerald-300 rounded-full"
+                    />
+                    <motion.div
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                      className="absolute inset-2 border-2 border-emerald-400 border-b-emerald-100 rounded-full opacity-60"
+                    />
+                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  </div>
+
+                  <motion.h4
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="text-[10px] font-black uppercase tracking-widest text-white mb-4"
+                  >
+                    {texts[lang].proc}
+                  </motion.h4>
+                  <p className="text-emerald-100/70 text-sm font-serif leading-relaxed px-4 max-w-[250px]">
+                    {lang === 'id' ? 'Mencocokkan metrik Anda dengan database...' : 'Matching your metrics with our database...'}
+                  </p>
+                </div>
               </div>
             ) : (
-              <div
-                className={`w-full bg-emerald-700 p-8 md:p-10 text-white flex flex-col justify-center transition-opacity duration-500 ${isCalculating ? "opacity-50" : "opacity-100"}`}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className={`w-full bg-emerald-700 text-white flex flex-col justify-between overflow-hidden`}
               >
-                <div className="flex flex-col h-full">
+                <div className={`flex flex-col h-full p-8 md:p-10 justify-center`}>
                   <div className="text-[10px] font-black mb-8 w-max uppercase tracking-widest text-slate-400 border-b border-white/20 pb-2">
                     {texts[lang].status}
                   </div>
@@ -303,20 +369,28 @@ export default function Calculator({
                     {texts[lang].diag}
                   </p>
                   <h3 className="text-4xl md:text-5xl font-black mb-6 leading-none tracking-tighter uppercase">
-                    {isCalculating
-                      ? "..."
-                      : currentShapeData?.title.split(" (")[0]}
+                    {currentShapeData?.title?.split(" (")[0]}
                     <br />
-                    {!isCalculating && (
+                    {currentShapeData?.title?.includes(" (") && (
                       <span className="text-xs opacity-60 tracking-widest block mt-4 text-slate-300">
-                        ({currentShapeData?.title.split(" (")[1]}
+                        ({currentShapeData?.title?.split(" (")[1]}
                       </span>
                     )}
                   </h3>
-                  <p className="text-slate-400 text-sm leading-relaxed mb-auto font-serif italic">
-                    "{isCalculating ? texts[lang].comp : currentShapeData?.desc}
-                    "
+                  <p className="text-emerald-100/90 text-sm leading-relaxed font-medium mb-8">
+                    {currentShapeData?.desc}
                   </p>
+
+                  {getShapeImageUrl() && (
+                    <div className="bg-emerald-800/20 border border-emerald-600/30 p-6 rounded-2xl mb-auto flex justify-center items-center backdrop-blur-sm">
+                      <img
+                        src={getShapeImageUrl()!}
+                        alt={currentShapeData?.title}
+                        className="h-48 md:h-64 object-contain drop-shadow-2xl mix-blend-screen opacity-90 transition-transform hover:scale-105 duration-500"
+                      />
+                    </div>
+                  )}
+
                   <button
                     onClick={scrollToRecommendations}
                     className="bg-white text-emerald-800 py-4 px-6 font-bold flex items-center justify-center gap-3 hover:bg-emerald-50 transition-colors mt-12 w-full uppercase tracking-widest text-[10px] shadow-lg shadow-black/10"
@@ -324,7 +398,7 @@ export default function Calculator({
                     {texts[lang].insp} <ArrowDown className="w-3 h-3" />
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
         </div>
