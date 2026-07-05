@@ -19,23 +19,8 @@ export default function Hero({ lang }: Props) {
           </span>
         </>
       ),
-      desc: "Kalkulator cerdas kami memetakan proporsi dimensimu secara akurat untuk menemukan bentuk tubuh aslimu. Dapatkan rekomendasi outfit yang 100% cocok buat postur kamu.",
+      desc: "Kalkulator cerdas kami memetakan proporsi tubuhmu secara akurat untuk menemukan body shape aslimu.",
       btn: "Cari Tahu Body Shape-ku",
-    },
-    en: {
-      title: (
-        <>
-          <span className="block text-slate-800 font-light tracking-tight mb-2 text-3xl md:text-5xl lg:text-[3.5rem] leading-[1.1]">
-            Your True <span className="font-serif italic text-emerald-700 font-normal px-1">Body Shape</span>,
-          </span>
-          <span className="text-slate-900 font-black tracking-tighter block text-6xl md:text-7xl lg:text-[5.5rem] leading-[0.95] mt-3">
-            Level Up Your <br className="hidden md:block"/>
-            <span className="text-emerald-600 block sm:inline sm:mt-0 mt-1">OOTD.</span>
-          </span>
-        </>
-      ),
-      desc: "Our smart calculator accurately maps your dimensions to uncover your true body shape. Get outfit recommendations tailored perfectly to your unique set of proportions.",
-      btn: "Find My Body Shape",
     },
   };
 
@@ -92,9 +77,9 @@ export default function Hero({ lang }: Props) {
                 .getElementById("calculator-section")
                 ?.scrollIntoView({ behavior: "smooth" })
             }
-            className="group bg-emerald-600 text-white px-8 py-4 md:px-10 md:py-5 text-sm md:text-base font-bold tracking-wide rounded-full hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 hover:shadow-2xl hover:shadow-emerald-600/30 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-3 overflow-hidden relative"
+            className="group bg-emerald-600 text-white px-8 py-4 md:px-10 md:py-5 text-sm md:text-base font-bold tracking-wide rounded-2xl hover:bg-emerald-500 shadow-lg shadow-emerald-600/20 hover:shadow-emerald-500/40 hover:ring-4 hover:ring-emerald-500/20 transition-all duration-300 hover:-translate-y-1 active:scale-95 flex items-center gap-3 overflow-hidden relative"
           >
-            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-emerald-500 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+            <span className="absolute inset-0 w-full h-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></span>
             <span className="relative z-10">{t[lang].btn}</span>
             <svg
               width="18"
@@ -105,7 +90,7 @@ export default function Hero({ lang }: Props) {
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="relative z-10 transition-transform group-hover:translate-x-1"
+              className="relative z-10 transition-all duration-300 group-hover:translate-x-1.5 group-hover:scale-110"
             >
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
