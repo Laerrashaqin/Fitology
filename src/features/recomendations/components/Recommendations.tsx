@@ -15,11 +15,6 @@ export default function Recommendations({ shapeData, gender, lang }: Props) {
       core: "Prinsip Utama",
       curated: "Siluet Terkurasi",
     },
-    en: {
-      dossier: "Style Dossier",
-      core: "Core Principles",
-      curated: "Curated Silhouettes",
-    },
   };
 
   return (
@@ -70,7 +65,7 @@ export default function Recommendations({ shapeData, gender, lang }: Props) {
                       src={fit.img}
                       alt={fit.name}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-700"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                     <div className="absolute top-4 left-4 bg-white px-3 py-1 text-[9px] font-black uppercase tracking-widest">
                       {fit.cat}
@@ -86,25 +81,6 @@ export default function Recommendations({ shapeData, gender, lang }: Props) {
                       </span>{" "}
                       {fit.reasonDesc}
                     </p>
-                    <div className="flex gap-2 mt-auto pt-2">
-                      <a
-                        href="#"
-                        onClick={(e) => e.preventDefault()}
-                        className="flex-1 bg-[#EE4D2D] hover:bg-[#d44326] text-white text-[10px] font-bold uppercase tracking-widest py-3 px-2 text-center rounded transition-all shadow-sm active:scale-95"
-                      >
-                        🛒 {lang === "id" ? "Beli di Shopee" : "Buy on Shopee"}
-                      </a>
-                      <a
-                        href="#"
-                        onClick={(e) => e.preventDefault()}
-                        className="flex-1 bg-[#03AC0E] hover:bg-[#028f0b] text-white text-[10px] font-bold uppercase tracking-widest py-3 px-2 text-center rounded transition-all shadow-sm active:scale-95"
-                      >
-                        🛒{" "}
-                        {lang === "id"
-                          ? "Beli di Tokopedia"
-                          : "Buy on Tokopedia"}
-                      </a>
-                    </div>
                   </div>
                 </div>
               ))}
