@@ -1,0 +1,38 @@
+{
+  "projectInfo": {
+    "name": "Fitology"
+  },
+  "collections": [
+    {
+      "name": "products",
+      "fields": [
+        { "name": "name", "type": "string" },
+        { "name": "imageUrl", "type": "string" },
+        { "name": "link", "type": "string" },
+        { "name": "price", "type": "string" },
+        { "name": "brand", "type": "string" },
+        { "name": "bodyShapes", "type": "array", "items": "string" }
+      ],
+      "rules": [
+        {
+          "condition": "true",
+          "actions": ["read", "write"]
+        }
+      ]
+    },
+    {
+      "name": "users",
+      "fields": [
+        { "name": "email", "type": "string" },
+        { "name": "username", "type": "string" },
+        { "name": "wishlist", "type": "array", "items": "string" }
+      ],
+      "rules": [
+        {
+          "condition": "request.auth != null && request.auth.uid == resource.id",
+          "actions": ["read", "write"]
+        }
+      ]
+    }
+  ]
+}
